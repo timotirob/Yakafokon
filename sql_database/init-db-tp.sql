@@ -72,6 +72,11 @@ END IF;
 
 -- --------- A COMPLÉTER (Question B2.3) ----------
 -- Ajouter ici la vérification du montant minimal (75€/j/pers)
+SET @prix_par_jour_par_pers = NEW.montantAPayer / (@nb_jours * NEW.nbParticipants);
 
+    IF @prix_par_jour_par_pers < 75 THEN
+        SIGNAL SQLSTATE '10002'
+        SET MESSAGE_TEXT = 'Alerte fraude : Le montant du contrat est inférieur au seuil de rentabilité (75€/j/p).';
+    END IF;
 END |
 DELIMITER ;

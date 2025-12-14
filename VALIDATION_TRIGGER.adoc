@@ -1,0 +1,115 @@
+= 🧪 Validation des Triggers SQL (Dossier B)
+:author: Yak-à-Partir Quality Assurance
+:icons: font
+:toc: left
+:toc-title: Plan de Test SQL
+:source-highlighter: highlightjs
+:sectnums:
+
+== 🎯 Objectif
+
+Ce document décrit la procédure de validation du déclencheur (Trigger) `before_insert_contrat_voyage`.
+L'objectif est de vérifier que les règles métier anti-fraude et les règles de gestion sont bien appliquées par la base de données.
+
+[IMPORTANT]
+====
+Ces tests doivent être exécutés dans la **Console Database** d'IntelliJ (ou Laragon/HeidiSQL) après avoir joué le script `script_yak.sql`.
+====
+
+== ⚙️ Préparation des Données
+
+Avant de tester, nous devons nous assurer que la table est vide et que les devis de référence existent.
+
+.Exécutez ce bloc pour initialiser l'environnement de test :
+[source,sql]
+----
+USE Yak_Voyages;
+
+-- 1. Nettoyage de la table des contrats pour partir d'une page blanche
+DELETE FROM Contrat_Voyage;
+
+-- 2. Création des devis de référence (si inexistants)
+-- Devis 1 : "Safari Kenya" (10 jours)
+-- Devis 2 : "Weekend BZH" (2 jours)
+INSERT IGNORE INTO Devis_Voyage (idDevis, intituleVoyage, nbJours, nbParticipants) VALUES
+(1, 'Safari Kenya', 10, 2),
+(2, 'Weekend BZH', 2, 2);
+----
+
+== ❌ Test 1 : Tentative de Fraude (Prix Trop Bas)
+
+**Règle à tester :** Le montant du contrat doit être supérieur à **75€ par jour et par personne**.
+
+* **Contexte :** Devis n°1 (10 jours) pour 2 personnes.
+* **Seuil Calculé :** 10 jours * 2 pers * 75€ = **1500€**.
+* **Action :** Tentative d'insertion d'un contrat à **1400€**.
+
+[source,sql]
+----
+INSERT INTO Contrat_Voyage (montantAPayer, acompte, nbParticipants, idDevis)
+VALUES (1400, 500, 2, 1);
+----
+
+.Résultat Attendu
+[CAUTION]
+====
+La requête doit échouer avec l'erreur SQL **10002**.
+Message : _"Alerte fraude : Le montant du contrat est inférieur au seuil de rentabilité (75€/j/p)."_
+====
+
+== ❌ Test 2 : Règle de Durée (Non-régression)
+
+**Règle à tester :** La durée du voyage doit être d'au moins 3 jours.
+
+* **Contexte :** Devis n°2 (2 jours).
+* **Action :** Tentative d'insertion d'un contrat valide financièrement, mais trop court.
+
+[source,sql]
+----
+INSERT INTO Contrat_Voyage (montantAPayer, acompte, nbParticipants, idDevis)
+VALUES (1000, 300, 2, 2);
+----
+
+.Résultat Attendu
+[CAUTION]
+====
+La requête doit échouer avec l'erreur SQL **10001**.
+Message : _"Le devis validé par le contrat est d'une durée inférieure à la durée minimale autorisée"_
+====
+
+== ✅ Test 3 : Cas Valide (Succès)
+
+**Objectif :** Vérifier qu'un contrat honnête est accepté.
+
+* **Contexte :** Devis n°1 (10 jours) pour 2 personnes.
+* **Seuil :** 1500€.
+* **Action :** Insertion d'un contrat à **2000€**.
+
+[source,sql]
+----
+INSERT INTO Contrat_Voyage (montantAPayer, acompte, nbParticipants, idDevis)
+VALUES (2000, 500, 2, 1);
+----
+
+.Résultat Attendu
+[NOTE]
+====
+La requête doit réussir.
+Message : _1 row affected_ (Une ligne affectée).
+====
+
+== 🕵️ Vérification Finale
+
+Pour prouver que le trigger a correctement filtré les entrées, nous inspectons le contenu final de la table.
+
+[source,sql]
+----
+SELECT * FROM Contrat_Voyage;
+----
+
+.Résultat Attendu
+* La table ne doit contenir **qu'une seule ligne** (celle du contrat à 2000€).
+* Les tentatives à 1400€ et sur le devis court ne doivent pas apparaître.
+
+---
+*Fin du protocole de validation SQL.*
