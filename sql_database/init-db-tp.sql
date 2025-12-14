@@ -20,6 +20,34 @@ CREATE TABLE Contrat_Voyage (
                                 FOREIGN KEY (idDevis) REFERENCES Devis_Voyage(idDevis)
 );
 
+- ============================================================
+-- 1. CRÉATION DE LA TABLE CLIENT (Manquante précédemment)
+-- ============================================================
+DROP TABLE IF EXISTS Client;
+CREATE TABLE Client (
+                        idCli INT AUTO_INCREMENT PRIMARY KEY,
+                        civilite VARCHAR(10),
+                        nom VARCHAR(50),
+                        prenom VARCHAR(50),
+                        pseudo VARCHAR(50) UNIQUE,  -- Important pour le Login
+                        mdp VARCHAR(255),           -- Important pour le Login
+                        adresse VARCHAR(100),
+                        codePostal VARCHAR(10),
+                        ville VARCHAR(50),
+                        pays VARCHAR(50),
+                        email VARCHAR(100),
+                        tel VARCHAR(20)
+    -- Note : accordPubli n'est pas là, c'est l'objet de la question B1.2
+);
+
+-- ============================================================
+-- 2. INSERTION DES DONNÉES DE TEST (Pour que le login marche)
+-- ============================================================
+INSERT INTO Client (nom, prenom, pseudo, mdp, email, ville) VALUES
+('Perrin', 'Richard', 'RichardP', 'password123', 'r.perrin@gmail.com', 'Rennes'),
+('Lenvy', 'Jeanne', 'MmeLenvy', 'admin1234', 'j.lenvy@yak.com', 'Brest'),
+('G', 'Allan', 'AllanG', 'azerty', 'allan.g@hotmail.fr', 'Nantes');
+
 -- Données pour tester
 INSERT INTO Devis_Voyage (idDevis, intituleVoyage, nbJours, nbParticipants) VALUES
 (1, 'Safari Kenya', 10, 2),

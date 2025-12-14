@@ -1,0 +1,114 @@
+= 🧪 Scénarios de Validation - Sécurité Web (Dossier C)
+:author: Yak-à-Partir Security Team
+:icons: font
+:toc: left
+:toc-title: Plan de Test
+:source-highlighter: highlightjs
+:sectnums:
+
+== 🎯 Objectif
+
+Ce document décrit la procédure de validation technique pour la **Mission C1** (Protection CSRF).
+L'objectif est de prouver que le correctif appliqué dans `modifMdp.php` et `traitement.php` est efficace et robuste.
+
+[IMPORTANT]
+====
+Ces tests doivent être réalisés **après** avoir appliqué vos corrections PHP.
+Assurez-vous que votre serveur Laragon est lancé et accessible via `http://yak.test`.
+====
+
+== 🧪 Scénario 1 : Le "Happy Path" (Fonctionnement Nominal)
+
+**Objectif :** Vérifier que la protection n'empêche pas un utilisateur légitime de changer son mot de passe.
+
+. **Connexion**
+* Connectez-vous avec le compte de test : `RichardP` / `password123`.
+
+. **Action**
+* Sur le formulaire, saisissez un nouveau mot de passe (ex: `Azerty123!`).
+* Validez le formulaire.
+
+. **Résultat Attendu**
+* ✅ Vous devez voir le message de succès : _"Succès ! Votre mot de passe a été mis à jour..."_.
+
+. **Vérification Technique (Base de données)**
+* Ouvrez la console _Database_ dans IntelliJ (ou bien HeidiSQL sur Laragon)
+* Exécutez la requête suivante pour vérifier la mise à jour :
++
+[source,sql]
+----
+SELECT * FROM Client WHERE pseudo = 'RichardP';
+----
+* Le champ `mdp` doit contenir la nouvelle valeur.
+
+== 🕵️ Scénario 2 : L'Inspection (Vérification du Jeton)
+
+**Objectif :** Vérifier visuellement la présence du jeton de sécurité (Token) dans le code source généré.
+
+. **Action**
+* Connectez-vous et accédez à la page de changement de mot de passe.
+* Ouvrez les outils de développement (**F12** ou Clic-droit -> _Inspecter_).
+* Recherchez la balise `<form>`.
+
+. **Résultat Attendu**
+* ✅ Vous devez trouver un champ caché contenant une chaîne aléatoire, ressemblant à ceci :
++
+[source,html]
+----
+<input type="hidden" name="token" value="a4f5b89c3...">
+----
+
+[WARNING]
+====
+Si cette ligne est absente, votre fichier `modifMdp.php` n'est pas correctement corrigé.
+====
+
+== 🏴‍☠️ Scénario 3 : L'Attaque Simulée (Test CSRF)
+
+**Objectif :** Simuler une attaque provenant d'un site malveillant pour prouver que la faille est colmatée.
+
+. **Préparation du Piège**
+* Créez un fichier nommé `hacker.html` (sur votre Bureau ou dans le dossier du projet).
+* Collez-y le code suivant :
++
+[source,html]
+----
+<h1>🎁 BRAVO ! VOUS AVEZ GAGNÉ UN IPHONE ! 🎁</h1>
+<p>Cliquez ci-dessous pour réclamer votre lot :</p>
+
+<form action="http://yak.test/traitement.php?action=modifMdp" method="POST">
+    <input type="hidden" name="pwd" value="HACKED">
+
+    <button type="submit" style="background:red; color:white; font-size:20px; padding:10px;">
+        RÉCLAMER MON CADEAU
+    </button>
+</form>
+----
+
+. **Exécution de l'Attaque**
+* Assurez-vous d'être connecté sur `http://yak.test` dans un onglet (votre session est active).
+* Ouvrez le fichier `hacker.html` dans un **nouvel onglet** du même navigateur.
+* Cliquez sur le bouton "RÉCLAMER MON CADEAU".
+
+. **Résultat Attendu**
+* ✅ **Si corrigé** : Vous devez être redirigé vers une page d'erreur ou voir un message **"ERREUR DE SÉCURITÉ (CSRF)"** (Code 403).
+* ❌ **Si vulnérable** : Vous voyez "Succès". Votre mot de passe a été remplacé par "HACKED".
+
+== 🔧 Scénario 4 : Le Sabotage (Altération de Données)
+
+**Objectif :** Vérifier que le serveur compare strictement le token reçu et le token en session.
+
+. **Action**
+* Connectez-vous légitimement sur la page de modification.
+* Ouvrez l'inspecteur (**F12**).
+* Localisez le champ `<input type="hidden" name="token" ...>`.
+* Double-cliquez sur la valeur du token (l'attribut `value`) pour l'éditer.
+* **Modifiez un seul caractère** (ex: changez un `a` en `b`) et appuyez sur Entrée.
+* Cliquez sur le bouton "Valider" du formulaire.
+
+. **Résultat Attendu**
+* ✅ Le serveur doit rejeter la demande (Message d'erreur ou page blanche selon votre implémentation).
+* Cela prouve que `$_POST['token']` est bien comparé à `$_SESSION['token']` dans `traitement.php`.
+
+---
+*Fin du protocole de validation.*

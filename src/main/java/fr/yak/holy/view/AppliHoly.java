@@ -49,17 +49,21 @@ public class AppliHoly extends JFrame {
            et l'ajouter à l'interface graphique.
          */
 
-        int niveauUser = leUtilConnecte.getNiveauHabilitation(); // Suppose que vous avez codé cette méthode !
+        // ========================================================================
+        // CORRECTION Q A3.3b : Restriction des accès
+        // ========================================================================
+
+        // On récupère le niveau de l'utilisateur connecté
+        int niveauUser = leUtilConnecte.getNiveauHabilitation();
 
         for (ElementMenu e : lesElementsMenu) {
-            // LOGIQUE A IMPLÉMENTER ICI :
-            // Si niveauUser >= e.getNiveauHabilitation() alors...
+            // Si le niveau de l'utilisateur est supérieur ou égal à celui du menu
             if (niveauUser >= e.getNiveauHabilitation()) {
                 e.rendreAccessible();
 
-                // Ajout visuel (Swing)
+                // Ajout graphique
                 JMenuItem item = new JMenuItem(e.getNom());
-                item.addActionListener(ev -> JOptionPane.showMessageDialog(this, "Ouverture de : " + e.getNom()));
+                item.addActionListener(ev -> JOptionPane.showMessageDialog(this, "Accès au module : " + e.getNom()));
                 menuGeneral.add(item);
             }
         }

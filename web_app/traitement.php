@@ -4,25 +4,27 @@ require 'db.php';
 
 if (isset($_GET['action']) && $_GET['action'] == 'modifMdp') {
 
-    // ⚠️ MISSION C1 : Vérification CSRF manquante ici
-    // if ( ... token check ... ) {
+    // --- CORRECTION MISSION C1 (Vérification) ---
+    // 1. On vérifie que le token existe en session
+    // 2. On vérifie qu'il est envoyé en POST
+    // 3. On vérifie qu'ils sont IDENTIQUES
+    if (!empty($_SESSION['token']) AND !empty($_POST['token'])
+        AND $_SESSION['token'] === $_POST['token']) { // "===" pour comparaison stricte
 
+        // Le code de mise à jour SQL (déjà fourni dans le kit précédent)
         $newPwd = $_POST['pwd'];
         $idCli = $_SESSION['user_id'];
 
-        // Mise à jour SQL réelle
         $stmt = $pdo->prepare("UPDATE Client SET mdp = ? WHERE idCli = ?");
         $stmt->execute([$newPwd, $idCli]);
 
-        echo "<link rel='stylesheet' href='style.css'>";
-        echo "<div class='container'>";
-        echo "<h1 class='success'>Succès !</h1>";
-        echo "<p>Votre mot de passe a été mis à jour dans la base.</p>";
-        echo "<a href='index.php'>Retour à l'accueil</a>";
-        echo "</div>";
+        echo "<h1>Succès !</h1><p>Mot de passe modifié en toute sécurité.</p>";
 
-    // } else {
-    //    die("Erreur CSRF !");
-    // }
+    } else {
+        // Échec CSRF
+        http_response_code(403); // Code HTTP Interdit
+        echo "<h1 style='color:red'>ERREUR DE SÉCURITÉ (CSRF)</h1>";
+        echo "<p>La requête ne provient pas du formulaire officiel.</p>";
+    }
 }
 ?>
