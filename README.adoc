@@ -11,7 +11,6 @@
 
 Vous intégrez l'équipe de développement de **Breizh-SN**.
 Votre mission consiste à sécuriser et unifier les applications de l'agence de voyage *Yak-à-Partir*.
-
 Ce projet regroupe les volets techniques et organisationnels de l'étude de cas :
 
 * **Java** : Gestion des utilisateurs (Client lourd).
@@ -27,7 +26,7 @@ Ce projet regroupe les volets techniques et organisationnels de l'étude de cas 
 
 == 📁 Dossier A : Application Java (Sécurité Applicative)
 
-**Objectif** : Implémenter les règles de sécurité pour les mots de passe et les habilitations.
+**Objectif** : Implémenter les règles de sécurité pour les mots de passe et les habilitations dans le package `fr.yak.holy`.
 
 === 📝 Analyse & Réflexion
 _(À rédiger dans votre rapport)_
@@ -42,18 +41,33 @@ _(À rédiger dans votre rapport)_
 === 🛠️ Tâches Techniques
 
 . **Analyse du code (Question A1.1)**
-* Localisez `src/main/java/model/Utilisateur.java`.
+* Localisez la classe : `src/main/java/fr/yak/holy/modele/Utilisateur.java`.
 * Corrigez les erreurs de nommage (Conventions Java) dans les méthodes existantes (ex: `ancienMdp`).
 
 . **Implémentation (Questions A2.1 & A2.2)**
 * Complétez la méthode `modifierMdp` pour respecter la politique de sécurité :
 ** Longueur >= 12 caractères.
 ** Au moins 1 majuscule, 3 minuscules, 4 chiffres, 1 caractère spécial.
-** Le mot de passe ne doit pas avoir déjà été utilisé.
+** Le mot de passe ne doit pas avoir déjà été utilisé (Vérification de l'historique).
+
+. **Préparation à la persistance (Question A2.3)**
+* Dans `Utilisateur.java`, créez une méthode `public String genererRequeteUpdate()` qui retourne la requête SQL (sous forme de chaîne de caractères) nécessaire pour mettre à jour le mot de passe d'un utilisateur en fonction de son ID.
+* _Note : Utilisez des points d'interrogation `?` pour les paramètres (Requête préparée)._
 
 . **Validation (Question A3.1)**
-* Ouvrez `src/test/java/test/UtilisateurTest.java`.
-* Exécutez les tests (Barre verte requise).
+* Ouvrez la classe de test : `src/test/java/test/UtilisateurTest.java`.
+* Vous devez **écrire la méthode de test** `verifModifierMdp()` (laissée vide ou absente).
+* Votre test doit vérifier 3 cas via des assertions (`assertTrue` / `assertFalse`) :
+** Le rejet d'un mot de passe trop simple (Echec).
+** Le rejet d'un mot de passe déjà utilisé dans l'historique (Echec).
+** L'acceptation d'un mot de passe valide (Succès).
+* Lancez ensuite les tests (Clic droit -> Run 'UtilisateurTest').
+
+[NOTE]
+====
+L'objectif est d'obtenir une barre **verte** (Tests Passed).
+Tant que la barre est rouge, soit votre test est mal écrit, soit votre méthode métier `modifierMdp` ne respecte pas les consignes.
+====
 
 == 📁 Dossier B : Base de Données (Intégrité & RGPD)
 
@@ -79,14 +93,21 @@ _(À rédiger dans votre rapport)_
 === 🛠️ Tâches Techniques
 
 . **Initialisation**
-* Exécutez `sql_database/script_yak.sql` dans votre base locale.
+* Configurez la connexion à votre base locale dans l'onglet *Database* d'IntelliJ.
+* Exécutez `sql_database/script_yak.sql`.
 
 . **Modification RGPD (Question B1.2)**
 * Écrivez et exécutez la requête `ALTER TABLE` pour ajouter le champ `accordPubli` (booléen, défaut FAUX).
 
 . **Sécurisation par Trigger (Questions B2.2 & B2.3)**
 * Complétez le trigger `before_insert_contrat_voyage` pour bloquer les contrats inférieurs à **75€ / jour / personne**.
-* Vérifiez son fonctionnement en tentant d'insérer des données invalides.
+
+[TIP]
+====
+Pour tester votre trigger, tentez d'insérer un contrat frauduleux via la console SQL :
+`INSERT INTO Contrat_Voyage ...`
+Vous devez voir apparaître votre message d'erreur personnalisé (`SIGNAL SQLSTATE`).
+====
 
 == 📁 Dossier C : Web & PHP (Failles & Incidents)
 
@@ -110,7 +131,8 @@ _(À rédiger dans votre rapport)_
 [21:41:26] NOTICE: utilisateur AllanG : s’est connecté correctement
 [21:41:26] NOTICE: utilisateur RichardP : erreur de connexion
 ----
-* Identifiez les événements suspects. Émettez une hypothèse sur l'attaque en cours concernant l'utilisateur `RichardP`.
+* Identifiez les événements suspects.
+* Émettez une hypothèse sur l'attaque en cours concernant l'utilisateur `RichardP`.
 
 . **Désactivation de compte (Question C2.3)**
 * Proposez une solution technique (MCD ou Algorithme) pour désactiver automatiquement un compte après 5 échecs successifs.
@@ -119,81 +141,15 @@ _(À rédiger dans votre rapport)_
 
 . **Audit et Correction (Mission C1)**
 * Ouvrez `web_app/modifMdp.php`.
-* Implémentez la protection par **Token Anti-CSRF** (Génération en session + Champ caché + Vérification dans `traitement.php`).
+* Constatez l'absence de protection.
+* Implémentez la protection par **Token Anti-CSRF** :
+** Génération en session.
+** Ajout du champ caché `<input type="hidden">` dans le formulaire.
+** Vérification stricte dans `traitement.php`.
 
 [WARNING]
 ====
-Pensez à configurer l'interpréteur PHP dans IntelliJ pour profiter de l'autocomplétion et de la détection d'erreurs.
-====
-
-
-
-== 📁 Dossier A : Application Java (Sécurité Applicative)
-
-**Objectif** : Implémenter les règles de sécurité pour les mots de passe et les habilitations.
-
-=== 🛠️ Tâches à réaliser
-
-. **Analyse**
-* Localisez la classe `src/main/java/model/Utilisateur.java`.
-* Repérez les méthodes laissées vides (`modifierMdp`, etc.).
-
-. **Implémentation (Questions A1 & A2)**
-* Complétez le code pour respecter les règles de complexité du mot de passe.
-* Assurez-vous que l'historique des mots de passe est bien vérifié.
-
-. **Validation (Question A3)**
-* Ouvrez `src/test/java/test/UtilisateurTest.java`.
-* Exécutez les tests en cliquant sur la flèche verte (Run).
-
-[NOTE]
-====
-L'objectif est d'obtenir une barre **verte** (Tests Passed). Tant que la barre est rouge, votre code métier ne respecte pas les consignes.
-====
-
-== 📁 Dossier B : Base de Données (Intégrité)
-
-**Objectif** : Fusionner les bases et empêcher les fraudes comptables via des déclencheurs.
-
-=== 🛠️ Tâches à réaliser
-
-. **Initialisation**
-* Ouvrez le fichier `sql_database/script_yak.sql`.
-* Connectez IntelliJ à votre base de données locale (Onglet _Database_ à droite -> `+` -> MySQL).
-* Exécutez le script pour créer les tables.
-
-. **Évolution du schéma (Question B1)**
-* Rédigez et exécutez la requête `ALTER TABLE` pour ajouter le consentement publipostage (`accordPubli`).
-
-. **Sécurisation par Trigger (Question B2)**
-* Complétez le trigger `before_insert_contrat_voyage`.
-* Il doit bloquer tout contrat dont le prix est inférieur à **75€ / jour / personne**.
-
-[TIP]
-====
-Pour tester votre trigger, tentez d'insérer un contrat frauduleux via la console SQL :
-`INSERT INTO Contrat_Voyage ...`
-Vous devez voir apparaître votre message d'erreur personnalisé (`SIGNAL SQLSTATE`).
-====
-
-== 📁 Dossier C : Web & PHP (Failles CSRF)
-
-**Objectif** : Sécuriser le formulaire de changement de mot de passe.
-
-=== 🛠️ Tâches à réaliser
-
-. **Audit du code**
-* Ouvrez `web_app/modifMdp.php`.
-* Constatez l'absence de protection CSRF (pas de jeton caché).
-
-. **Correction (Question C1)**
-* Générez un token de session au début du fichier.
-* Ajoutez le champ caché `<input type="hidden" ...>` dans le formulaire.
-* Vérifiez la validité du token dans `web_app/traitement.php`.
-
-[WARNING]
-====
-Si vous utilisez l'interpréteur PHP intégré à IntelliJ, pensez à configurer le chemin vers `php.exe` dans les paramètres (_Settings -> PHP_).
+Pensez à configurer l'interpréteur PHP dans IntelliJ (_Settings -> PHP_) pour profiter de la détection d'erreurs.
 ====
 
 == 🐘 Lancer l'application Web avec Laragon

@@ -69,13 +69,7 @@ public class Utilisateur {
         return 0; // Valeur par défaut pour que ça compile
     }
 
-    /**
-     * Vérifie que le nouveau mot de passe passé en paramètre
-     * répond aux règles de complexité et qu'il ne fait pas partie des anciens mots de passe.
-     * Si les vérifications sont correctes le mot de passe actuel est enregistré...
-     * @param valMdp nouveau mot de passe de l'utilisateur
-     * @return vrai si la modification du mot de passe s'est bien passée, faux sinon
-     */
+
     public boolean modifierMdp(String valMdp) {
         /* A COMPLÉTER (Question A2.2) */
         return false; // Valeur par défaut
