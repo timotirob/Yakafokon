@@ -63,6 +63,16 @@ public class Utilisateur {
         return this.sonHabilitation.getNiveau();
     }
 
+    // --- CORRECTION Q A2.3 : Préparation de la requête SQL ---
+    /**
+     * Retourne la requête SQL de mise à jour (pour validation pédagogique)
+     * @return La requête SQL préparée
+     */
+    public String genererRequeteUpdate() {
+        // L'élève doit trouver la bonne syntaxe SQL
+        return "UPDATE Client SET mdp = ? WHERE idCli = ?";
+    }
+
     /**
      * Tente de modifier le mot de passe de l'utilisateur.
      * Vérifie la complexité et l'unicité par rapport à l'historique.
