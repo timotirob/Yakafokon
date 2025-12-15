@@ -1,0 +1,269 @@
+= 🔑 CORRECTION : TP Yak-à-Partir
+:author: Professeur SIO
+:revdate: 2025-05-31
+:toc: left
+:toc-title: Sommaire de la Correction
+:icons: font
+:source-highlighter: highlightjs
+:sectnums:
+
+== 📁 Dossier A : Application Java (Sécurité)
+
+=== A1 & A2. Implémentation de la classe `Utilisateur`
+
+[source,java]
+.Fichier : src/main/java/fr/yak/holy/modele/Utilisateur.java
+----
+package fr.yak.holy.modele;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+
+public class Utilisateur {
+    // ... attributs (inchangés) ...
+
+    // --- CORRECTION Q A1.1 : Renommage (camelCase) ---
+    public boolean estAncienMdp(String motDePasse) {
+        for (MotDePasse mdp : lesAnciensMdp) {
+            if (mdp.getValMdp().equals(motDePasse)) return true;
+        }
+        return false;
+    }
+
+    // --- CORRECTION Q A1.2 : Javadoc ---
+    /**
+     * Tente de modifier le mot de passe.
+     * Vérifie la complexité (12 car, 1 Maj, 3 min, 4 chiffres, 1 spé)
+     * et l'unicité par rapport à l'historique.
+     * @param nouveauMdp Le nouveau mot de passe candidat.
+     * @return true si la modification est acceptée, false sinon.
+     */
+    // --- CORRECTION Q A2.1 & A2.2 : Logique métier ---
+    public boolean modifierMdp(String nouveauMdp) {
+        // 1. Vérification complexité
+        if (!verifierMdp(nouveauMdp)) return false;
+
+        // 2. Vérification historique
+        if (estAncienMdp(nouveauMdp)) return false;
+
+        // 3. Archivage
+        this.lesAnciensMdp.add(new MotDePasse(this.motDePasse, LocalDate.now()));
+        
+        // 4. Mise à jour
+        this.motDePasse = nouveauMdp;
+        return true;
+    }
+
+    private boolean verifierMdp(String mdp) {
+        int nbMaj = 0, nbMin = 0, nbChiffre = 0, nbSpe = 0;
+        for (char c : mdp.toCharArray()) {
+            if (Character.isUpperCase(c)) nbMaj++;
+            else if (Character.isLowerCase(c)) nbMin++;
+            else if (Character.isDigit(c)) nbChiffre++;
+            else if (!Character.isLetterOrDigit(c)) nbSpe++;
+        }
+        // Règle : 12 car, 1 Maj, 3 Min, 4 Chiffres, 1 Spécial
+        return mdp.length() >= 12 && nbMaj >= 1 && nbMin >= 3 && nbChiffre >= 4 && nbSpe >= 1;
+    }
+
+    // --- CORRECTION Q A2.3 : Requête SQL ---
+    public String genererRequeteUpdate() {
+        return "UPDATE Client SET mdp = ? WHERE idCli = ?";
+    }
+    
+    // --- CORRECTION Q A3.3a : Getter Habilitation ---
+    public int getNiveauHabilitation() {
+        return this.sonHabilitation.getNiveau();
+    }
+}
+----
+
+=== A3.1. Test Unitaire
+
+[source,java]
+.Fichier : src/test/java/test/UtilisateurTest.java
+----
+// ... imports ...
+class UtilisateurTest {
+    Utilisateur unUtilisateur;
+
+    @BeforeEach
+    void init() {
+        Habilitation habil = new Habilitation("ma01", 1, "master", true, false, true, false);
+        unUtilisateur = new Utilisateur("U001", "Nom", "Pre", "login", "M1ue@uiT455n", habil);
+        
+        // Simulation historique (Attention : Mots de passe valides à 4 chiffres !)
+        unUtilisateur.modifierMdp("Lae99_Mat00!"); // Devient l'actuel
+        unUtilisateur.modifierMdp("NouveauPass1234!"); // Devient l'actuel, "Lae99..." passe en archive
+    }
+
+    @Test
+    void verifModifierMdp() {
+        // 1. Échec : Trop simple
+        assertFalse(unUtilisateur.modifierMdp("toto"), "Doit refuser MDP faible");
+
+        // 2. Échec : Déjà utilisé ("Lae99_Mat00!" est dans les archives grâce au init())
+        assertFalse(unUtilisateur.modifierMdp("Lae99_Mat00!"), "Doit refuser ancien MDP");
+
+        // 3. Succès : Valide (12 chars, 1M, 3m, 4c, 1s)
+        assertTrue(unUtilisateur.modifierMdp("Valide2024!ok"), "Doit accepter MDP fort");
+    }
+}
+----
+
+
+
+=== A3.2. Analyse de Risque (Menu)
+* **Risque :** Élévation de privilèges (ou accès illégitime).
+* **Scénario :** Un stagiaire (niveau 0) se connecte. L'interface charge tous les menus. Le stagiaire clique sur "Comptabilité". Même si le code métier bloquait l'action, il peut voir des données sensibles affichées par défaut ou tenter des actions non prévues.
+* **Correction (A3.3b) :** `if (user.getNiveauHabilitation() < 2) btnCompta.setVisible(false);`
+
+== 📁 Dossier B : Base de Données (SQL & RGPD)
+
+=== B1.1. Classification des données
+[cols="1,1,1"]
+|===
+|Donnée |Type |Sensibilité
+
+|Nom, Prénom, Email
+|Donnée Personnelle (PII)
+|Faible (Standard)
+
+|Mot de passe
+|Donnée Technique
+|**Critique** (Doit être haché)
+
+|Accord Publipostage
+|Donnée Personnelle
+|Moyenne (Consentement explicite)
+|===
+
+=== A3.3. Sécurisation de l'Interface (Habilitations)
+
+**1. Côté Modèle (Question A3.3a)**
+Dans la classe `Utilisateur`, on expose le niveau d'habilitation via une délégation :
+
+[source,java]
+----
+// Dans Utilisateur.java
+public int getNiveauHabilitation() {
+    // On délègue la question à l'objet Habilitation
+    return this.sonHabilitation.getNiveau();
+}
+----
+
+**2. Côté Vue / Swing (Question A3.3b)**
+Dans la classe principale de l'interface (ex: `FenetrePrincipale.java` ou `AppliHoly.java`), on masque les éléments sensibles au chargement de la fenêtre :
+
+[source,java]
+----
+// Dans le constructeur ou la méthode d'initialisation de la fenêtre
+public void appliquerHabilitations(Utilisateur userConnecte) {
+    
+    // Règle : Seul le niveau 2 (Responsable) ou plus peut voir l'admin
+    if (userConnecte.getNiveauHabilitation() < 2) {
+        
+        // On cache le bouton (ou le menu) "Gestion Administrative"
+        this.btnGestionAdmin.setVisible(false);
+        
+        // Alternative : On le grise seulement
+        // this.btnGestionAdmin.setEnabled(false); 
+    }
+}
+----
+
+=== B1.2. Modification de structure (RGPD)
+[source,sql]
+----
+ALTER TABLE Client 
+ADD accordPubli BOOLEAN DEFAULT FALSE;
+----
+
+=== B1.3 & B1.4. Consentement
+* **Email :** Doit être clair, expliquer la finalité (fusion), et fournir un lien "Opt-in" (Cocher pour accepter). Pas de case pré-cochée !
+* **Preuve :** Stocker le timestamp, l'adresse IP, et l'ID de la version des CGU acceptées dans une table `Log_Consentement` immuable.
+
+=== B2. Trigger Anti-Fraude
+
+[source,sql]
+----
+DELIMITER $$
+CREATE TRIGGER before_insert_contrat_voyage
+BEFORE INSERT ON Contrat_Voyage
+FOR EACH ROW
+BEGIN
+    -- Déclaration des variables
+    DECLARE duree INT;
+    DECLARE seuil DECIMAL(10,2);
+    
+    -- Récupération de la durée via le Devis
+    SELECT nbJours INTO duree 
+    FROM Devis_Voyage WHERE idDevis = NEW.idDevis;
+    
+    -- Calcul du seuil : 75€ * nbJours * nbParticipants
+    SET seuil = 75 * duree * NEW.nbParticipants;
+    
+    -- Vérification Anti-Fraude
+    IF NEW.montantAPayer < seuil THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'FRAUDE : Montant inférieur au seuil de rentabilité (75€/j/p)';
+    END IF;
+END $$
+DELIMITER ;
+----
+
+== 📁 Dossier C : Web (PHP & CSRF)
+
+=== C1.1. Principe CSRF
+Le **Cross-Site Request Forgery** force le navigateur d'un utilisateur connecté à effectuer une action à son insu (ex: changer son mot de passe) via un lien piégé sur un autre site.
+* **Contre-mesure :** Le Jeton (Token). Le serveur génère un code aléatoire unique en session. Le formulaire doit renvoyer ce code. L'attaquant ne connaissant pas ce code, sa fausse requête échouera.
+
+=== C1. Code PHP Sécurisé
+
+**1. Formulaire (`modifMdp.php`)**
+[source,php]
+----
+<?php
+session_start();
+// Génération du token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+?>
+<form method="POST" action="traitement.php">
+    <input type="hidden" name="token" value="<?php echo $_SESSION['csrf_token']; ?>">
+    </form>
+----
+
+**2. Traitement (`traitement.php`)**
+[source,php]
+----
+<?php
+session_start();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['token']) || !hash_equals($_SESSION['csrf_token'], $_POST['token'])) {
+        die("Erreur CSRF : Jeton invalide !");
+    }
+    // ... suite du traitement (Update SQL) ...
+}
+?>
+----
+
+=== C2.1. Analyse des Logs (Incident RichardP)
+
+. **Observations**
+* Utilisateur `RichardP` : 5 échecs consécutifs en moins de 2 secondes (21:41:24 - 21:41:26).
+
+. **Hypothèse**
+* La vitesse d'exécution prouve qu'il s'agit d'un **automate** (script).
+* C'est une attaque par **Force Brute** (dictionnaire).
+
+. **Conclusion**
+* La ligne `[21:41:28] ... s’est connecté correctement` montre que l'attaque a **réussi**. Le compte est piraté.
+
+=== C2.3. Algorithme Désactivation
+* **Principe :** Ajouter un champ `nbEchecs` et `dateDernierEchec` dans la table Utilisateur.
+* **Algorithme :**
+    1. Si `login` OK mais `mdp` KO : `nbEchecs++`.
+    2. Si `nbEchecs >= 5` : Bloquer le compte (flag `estActif = false` ou blocage temporaire de 15 min).
+    3. Si connexion OK : Remettre `nbEchecs = 0`.
