@@ -120,17 +120,8 @@ _(À rédiger dans votre rapport)_
 * Expliquez brièvement le principe de la faille CSRF et comment le jeton (token) protège l'application.
 
 . **Analyse de Logs (Question C2.1)**
-* Voici un extrait du fichier de journalisation :
-+
-----
-[21:41:18] NOTICE: utilisateur AllanG : erreur de connexion
-[21:41:20] WARNING: utilisateur : essai de connexion avec champs vides
-[21:41:24] NOTICE: utilisateur RichardP : erreur de connexion
-[21:41:24] NOTICE: utilisateur RichardP : erreur de connexion
-[21:41:24] NOTICE: utilisateur RichardP : erreur de connexion
-[21:41:26] NOTICE: utilisateur AllanG : s’est connecté correctement
-[21:41:26] NOTICE: utilisateur RichardP : erreur de connexion
-----
+* **Génération des logs :** Dans votre navigateur, lancez le script de simulation d'activité : **http://yak.test/generateur_logs.php**.
+* Ouvrez le fichier `web_app/auth.log` qui vient d'être créé par le serveur.
 * Identifiez les événements suspects.
 * Émettez une hypothèse sur l'attaque en cours concernant l'utilisateur `RichardP`.
 
