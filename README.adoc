@@ -69,6 +69,22 @@ L'objectif est d'obtenir une barre **verte** (Tests Passed).
 Tant que la barre est rouge, soit votre test est mal écrit, soit votre méthode métier `modifierMdp` ne respecte pas les consignes.
 ====
 
+. **Sécurisation de l'Interface (Question A3.3)**
+* **A3.3a** : Dans la classe `Utilisateur`, ajoutez la méthode `public int getNiveauHabilitation()` qui retourne le niveau hiérarchique de l'habilitation associée (via délégation).
+* **A3.3b** : Ouvrez la classe principale de l'interface graphique (ex: `AppliHoly.java` ou `FenetrePrincipale`).
+* Modifiez le code pour masquer le bouton/menu "Gestion Administrative" si l'utilisateur connecté n'a pas un niveau suffisant (niveau < 2).
+
+[HINT]
+====
+Voici un extrait de code pour vous aider à manipuler les composants graphiques Swing :
+[source,java]
+----
+// Ajout graphique
+JMenuItem item = new JMenuItem(e.getNom());
+item.addActionListener(ev -> JOptionPane.showMessageDialog(this, "Accès au module : " + e.getNom()));
+menuGeneral.add(item);
+----
+
 == 📁 Dossier B : Base de Données (Intégrité & RGPD)
 
 **Objectif** : Fusionner les bases, gérer le consentement RGPD et empêcher les fraudes.
