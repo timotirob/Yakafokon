@@ -18,10 +18,10 @@ public class Utilisateur {
     }
 
     // --- CORRECTION Q A1.1 : Renommage (Verbe au début + camelCase) ---
-    public boolean estAncienMdp(String m) {
+    public boolean existeAncienMdp(String motDePasseRecherche) {
         // Parcours de la liste des anciens mots de passe
         for (MotDePasse mdp : lesAnciensMdp) {
-            if (mdp.getValMdp().equals(m)) {
+            if (mdp.getValMdp().equals(motDePasseRecherche)) {
                 return true;
             }
         }
@@ -88,7 +88,7 @@ public class Utilisateur {
         }
 
         // 2. Vérifier si déjà utilisé
-        if (estAncienMdp(nouveauMdp)) {
+        if (existeAncienMdp(nouveauMdp)) {
             return false;
         }
 
