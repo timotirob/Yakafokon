@@ -29,4 +29,11 @@ class UtilisateurTest {
 
     /* A COMPLÉTER SUR VOTRE COPIE (Question A3.1) */
     // AJOUTER ici la méthode @Test verifModifierMdp()
+
+    @Test
+    void verifModifierMdp() {
+        assertFalse(unUtilisateur.modifierMdp("simple"), "Mot de passe trop simple");
+        assertFalse(unUtilisateur.modifierMdp("Lae99_Mat00!"), "Mot de passe existe déjà");
+        assertTrue(unUtilisateur.modifierMdp("Lae99@@123_Mat00!"), "Mot de passe pas bon");
+    }
 }

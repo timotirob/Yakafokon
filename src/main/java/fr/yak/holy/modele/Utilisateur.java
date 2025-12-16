@@ -19,12 +19,19 @@ public class Utilisateur {
 
     // --- CODE FOURNI DANS LE DOCUMENT A3 (Avec les défauts à corriger) ---
 
+    /**
+     *
+     *
+     * @param motDePasseARechercher lemot de passe que l'on cherche dans la liste des anciens
+     * @return boolean true si le mot de passe est trouvé
+     */
+
     // NOTE POUR L'ELEVE : Cette méthode ne respecte pas les conventions (Question A1.1)
-    public boolean ancienMdp(String m) {
+    public boolean existeAncienMdp(String motDePasseARechercher) {
         boolean existe = false;
         int i = 0;
         while (i < this.lesAnciensMdp.size() && existe == false) {
-            if (this.lesAnciensMdp.get(i).getValMdp().equals(m)) {
+            if (this.lesAnciensMdp.get(i).getValMdp().equals(motDePasseARechercher)) {
                 existe = true;
             } else {
                 i = i + 1;
@@ -66,13 +73,25 @@ public class Utilisateur {
     /** @return le niveau de l’habilitation de l’utilisateur */
     public int getNiveauHabilitation() {
         /* A COMPLÉTER (Question A3.3) */
-        return 0; // Valeur par défaut pour que ça compile
+        return this.sonHabilitation.getNiveau() ;
     }
 
 
     public boolean modifierMdp(String valMdp) {
         /* A COMPLÉTER (Question A2.2) */
-        return false; // Valeur par défaut
+
+        if (!verifierMdp(valMdp))
+            return false ;
+
+        MotDePasse motDePasseAArchiver = new MotDePasse(this.motDePasse,LocalDate.now()) ;
+
+        if (existeAncienMdp(valMdp))
+            return false ;
+
+        this.lesAnciensMdp.add(motDePasseAArchiver) ;
+        this.motDePasse = valMdp ;
+        return true ;
+
     }
 
     // Getters nécessaires pour le fonctionnement global (non fournis dans l'extrait mais implicites)

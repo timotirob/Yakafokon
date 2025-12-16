@@ -49,15 +49,28 @@ public class AppliHoly extends JFrame {
            et l'ajouter à l'interface graphique.
          */
 
+        int niveauUser = leUtilConnecte.getNiveauHabilitation();
 
+        for (ElementMenu e : lesElementsMenu) {
+            // Si le niveau de l'utilisateur est supérieur ou égal à celui du menu
+            if (niveauUser >= e.getNiveauHabilitation()) {
+                e.rendreAccessible();
+
+                // Ajout graphique
+                JMenuItem item = new JMenuItem(e.getNom());
+                item.addActionListener(ev -> JOptionPane.showMessageDialog(this, "Accès au module : " + e.getNom()));
+                menuGeneral.add(item);
+            }
+        }
         // ========================================================================
 
         menuBar.add(menuGeneral);
         this.setJMenuBar(menuBar);
+        // ========================================================================
 
         // --- 4. Contenu de la page ---
         // LIGNE CI DESSOUS A DECOMMENTER ENSUITE
-        // lblBienvenue = new JLabel("Bienvenue " + unUtil.getPrenom() + " (Niveau " + niveauUser + ")", SwingConstants.CENTER);
+        lblBienvenue = new JLabel("Bienvenue " + unUtil.getPrenom() + " (Niveau " + niveauUser + ")", SwingConstants.CENTER);
         lblBienvenue.setFont(new Font("Arial", Font.BOLD, 18));
         this.add(lblBienvenue, BorderLayout.CENTER);
     }
